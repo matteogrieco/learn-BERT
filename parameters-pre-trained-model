@@ -1,0 +1,17 @@
+from transformers import BertConfig, BertForMaskedLM, DataCollatorForLanguageModeling
+
+config = BertConfig(
+    vocab_size=50000,
+    hidden_size=768, 
+    num_hidden_layers=12, 
+    num_attention_heads=12,
+    max_position_embeddings=512
+)
+ 
+model = BertForMaskedLM(config).from_pretrained('./')
+print('No of parameters: ', model.num_parameters())
+
+
+data_collator = DataCollatorForLanguageModeling(
+    tokenizer=tokenizer, mlm=True, mlm_probability=0.15
+)

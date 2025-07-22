@@ -9,6 +9,7 @@ with open('text.txt','w') as f:
   for setence in df.text.values:
     f.write(setence+'\n')
 
+
 # Train a tokenizer
 import tokenizers
 from transformers import BertTokenizer, LineByLineTextDataset

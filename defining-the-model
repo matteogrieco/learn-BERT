@@ -1,0 +1,43 @@
+import torch
+import torch.nn as nn
+from pytorch_pretrained_bert import BertModel, BertTokenizer
+
+class Model(nn.Module):
+    def __init__(self, pretrain_model_path='./mybert/', hidden_size=768):
+        super(Model, self).__init__()
+        self.pretrain_model_path = pretrain_model_path
+        self.bert = BertModel.from_pretrained(pretrain_model_path)
+        for param in self.bert.parameters():
+            param.requires_grad = True
+        self.dropout = nn.Dropout(0.1)
+        self.embed_size = hidden_size
+        self.cls = nn.Linear(self.embed_size, 2)
+
+    def forward(self, ids, attention_mask, labels=None, training=True):
+        loss_fct = nn.CrossEntropyLoss()
+
+        context = ids
+        types = None
+        mask = attention_mask
+        sequence_out, cls_out = self.bert(context, token_type_ids=types, attention_mask=attention_mask, output_all_encoded_layers=False)
+        cls_out = self.dropout(cls_out)
+        logits = self.cls(cls_out)
+
+        if training:
+          loss = loss_fct(logits.view(-1, 2), labels.view(-1))
+          
+          return loss, nn.Softmax(dim=-1)(logits)
+        else:
+          return logits
+
+
+pretrain_model_path = 'bert-base-chinese'
+tokenizer = BertTokenizer.from_pretrained(pretrain_model_path)
+'''
+params
+'''
+CLS_TOKEN = '[CLS]'
+SEP_TOKEN = '[SEP]'
+seq_length = 64
+
+mybertmodel = Model()

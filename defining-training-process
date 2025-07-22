@@ -1,0 +1,81 @@
+
+from transformers import DistilBertForSequenceClassification, AdamW
+import time
+from random import random
+from datetime import datetime
+
+from torch.utils.data import DataLoader
+from tqdm import tqdm, trange
+
+from sklearn.metrics import roc_auc_score
+
+train_dataset = QuestDataset(df_train, train_mode=True, labeled=True)
+eval_dataset = QuestDataset(df_val, train_mode=True, labeled=True)
+
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=2,)
+eval_loader = torch.utils.data.DataLoader(eval_dataset, batch_size=64, shuffle=False, num_workers=2,)
+
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+mybertmodel.to(device)
+mybertmodel.train()
+
+optim = AdamW(mybertmodel.parameters(), lr=5e-5)
+ 
+for epoch in range(4):
+    with tqdm(iterable=train_loader,bar_format='{desc} {n_fmt:>4s}/{total_fmt:<4s} {percentage:3.0f}%|{bar}| {postfix}',
+        ) as t:
+          start_time = datetime.now()
+          loss_list = []
+          label_list = []
+          pred_list = []
+          for count, batch in enumerate(train_loader):
+              t.set_description_str(f"\33[36m【Epoch {epoch + 1:04d}】")
+
+              optim.zero_grad()
+              input_ids = batch['input_ids'].to(device)
+              attention_mask = batch['attention_mask'].to(device)
+              labels = batch['labels'].to(device)
+              label_list.append(batch['labels'].numpy())
+                
+              outputs = mybertmodel(input_ids, attention_mask=attention_mask, labels=labels)
+              loss = outputs[0]
+                
+              pred_tmp = outputs[1].cpu().detach().numpy()
+              pred_tmp = np.exp(pred_tmp)
+              pred_tmp = pred_tmp[:,1]/np.sum(pred_tmp,axis=-1)
+              pred_list.append(pred_tmp)
+                
+              loss.backward()
+              optim.step()
+
+              loss_list.append(loss)
+              cur_time = datetime.now()
+              delta_time = cur_time - start_time
+
+              t.set_postfix_str(f"train_loss={sum(loss_list) / len(loss_list):.6f}， ：{delta_time}\33[0m")
+              t.update()
+            
+            
+          train_auc = roc_auc_score(np.concatenate(label_list), np.concatenate(pred_list))
+          t.set_postfix_str(f"train_auc={train_auc:.6f}\33[0m")
+    with tqdm(iterable=eval_loader, bar_format='{desc} {postfix}',) as t:
+            label_list = []
+            pred_list = []
+            for count, batch in enumerate(eval_loader):
+                    input_ids = batch['input_ids'].to(device)
+                    attention_mask = batch['attention_mask'].to(device)
+                    labels = batch['labels'].to(device)
+                    label_list.append(batch['labels'].numpy())
+                    
+                    outputs = mybertmodel(input_ids, attention_mask=attention_mask, training=False)
+
+                    pred_tmp = outputs.cpu().detach().numpy()
+                    pred_tmp = np.exp(pred_tmp)
+                    pred_tmp = pred_tmp[:,1]/np.sum(pred_tmp,axis=-1)
+                    pred_list.append(pred_tmp)
+                    
+            test_auc = roc_auc_score(np.concatenate(label_list), np.concatenate(pred_list))
+            t.set_description_str(f"\33[35m")
+            t.set_postfix_str(f"test_auc={test_auc:.6f}\33[0m")
+
+            t.update()

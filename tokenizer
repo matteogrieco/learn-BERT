@@ -13,4 +13,4 @@ with open('text.txt','w') as f:
 import tokenizers
 from transformers import BertTokenizer, LineByLineTextDataset
 
-tokenizer = BertTokenizer.from_pretrained('bert-xx')
+tokenizer = BertTokenizer.from_pretrained('bert-x')

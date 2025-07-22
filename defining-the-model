@@ -31,7 +31,7 @@ class Model(nn.Module):
           return logits
 
 
-pretrain_model_path = 'bert-base-chinese'
+pretrain_model_path = 'bert-base'
 tokenizer = BertTokenizer.from_pretrained(pretrain_model_path)
 '''
 params

@@ -1,0 +1,16 @@
+import numpy as np 
+import pandas as pd 
+from tqdm import tqdm
+
+path_to_file = None
+df = pd.read_csv(path_to_file)
+
+with open('text.txt','w') as f:
+  for setence in df.text.values:
+    f.write(setence+'\n')
+
+# Train a tokenizer
+import tokenizers
+from transformers import BertTokenizer, LineByLineTextDataset
+
+tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
